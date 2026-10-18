@@ -7,7 +7,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/thenitverse/goredis-queue/internal/queue" 
+	"github.com/thenitverse/goredis-queue/internal/queue"
 )
 
 func main() {
