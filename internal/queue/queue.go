@@ -29,9 +29,9 @@ func (q *QueueClient) Close() error {
 	return q.redisClient.Close()
 }
 
-func (q *QueueClient) Enqueue(ctx context.Context, jobID string) error {
-	return q.redisClient.LPush(ctx, pendingKey, jobID).Err()
-}
+//func (q *QueueClient) Enqueue(ctx context.Context, jobID string) error {
+//return q.redisClient.LPush(ctx, pendingKey, jobID).Err()
+//}
 
 func (q *QueueClient) Dequeue(ctx context.Context, timeout time.Duration) (string, bool, error) {
 	res, err := q.redisClient.BRPop(ctx, timeout, pendingKey).Result()
