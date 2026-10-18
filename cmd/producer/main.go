@@ -23,7 +23,8 @@ func main() {
 
 	for i := 1; i <= 10; i++ {
 		jobID := fmt.Sprintf("job-id-%d", i)
-		if err := q.Enqueue(ctx, jobID); err != nil {
+		payload := fmt.Sprintf(`{"n":%d}`, i)
+		if err := q.Enqueue(ctx, jobID, payload); err != nil {
 			log.Printf("Failed to enqueue %s: %v", jobID, err)
 			failed++
 		} else {
