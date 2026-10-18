@@ -36,8 +36,17 @@ func main() {
 			continue
 		}
 		fmt.Printf("Processing %s\n", jobID)
-		time.Sleep(2 * time.Second)
+		if err := q.SetStatus(context.Background(), jobID, queue.StatusProcessing); err != nil {
+			log.Printf("set status processing: %v", err)
+		}
+
+		time.Sleep(2 * time.Second) // real work goes here
+
+		if err := q.SetStatus(context.Background(), jobID, queue.StatusCompleted); err != nil {
+			log.Printf("set status completed: %v", err)
+		}
 		fmt.Printf("done %s\n", jobID)
+
 	}
 
 }
