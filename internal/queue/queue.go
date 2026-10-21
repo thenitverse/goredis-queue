@@ -9,6 +9,7 @@ import (
 )
 
 const pendingKey = "queue:pending"
+const processingKey = "queue:processing"
 
 type QueueClient struct {
 	redisClient *redis.Client
@@ -34,12 +35,15 @@ func (q *QueueClient) Close() error {
 //}
 
 func (q *QueueClient) Dequeue(ctx context.Context, timeout time.Duration) (string, bool, error) {
-	res, err := q.redisClient.BRPop(ctx, timeout, pendingKey).Result()
+	id, err := q.redisClient.BLMove(ctx, pendingKey, processingKey, "RIGHT", "LEFT", timeout).Result()
 	if errors.Is(err, redis.Nil) {
 		return "", false, nil
 	}
 	if err != nil {
 		return "", false, err
 	}
-	return res[1], true, nil
+	return id, true, nil
+}
+func (q *QueueClient) Ack(ctx context.Context, id string) error {
+	return q.redisClient.LRem(ctx, processingKey, 1, id).Err()
 }

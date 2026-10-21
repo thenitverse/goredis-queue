@@ -75,3 +75,31 @@ func (q *QueueClient) MarkFailed(ctx context.Context, id, errmsg string) error {
 	return err
 
 }
+
+func (q *QueueClient) RecoverStale(ctx context.Context, maxAge time.Duration) (int, error) {
+	ids, err := q.redisClient.LRange(ctx, processingKey, 0, -1).Result()
+	if err != nil {
+		return 0, err
+	}
+	recovered := 0
+	for _, id := range ids {
+		job, err := q.Getjob(ctx, id)
+		if err != nil {
+			continue
+		}
+		if now()-job.UpdatedAt < maxAge.Milliseconds() {
+			continue
+		}
+		pipe := q.redisClient.TxPipeline()
+		pipe.LRem(ctx, processingKey, 1, id)
+		pipe.HSet(ctx, jobKey(id), "status", StatusQueued, "updated_at", now())
+		pipe.HIncrBy(ctx, jobKey(id), "retries", 1)
+		pipe.LPush(ctx, pendingKey, id)
+		if _, err := pipe.Exec(ctx); err != nil {
+			return recovered, err
+		}
+		recovered++
+	}
+	return recovered, nil
+
+}

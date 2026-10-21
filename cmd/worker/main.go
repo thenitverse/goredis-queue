@@ -45,6 +45,9 @@ func main() {
 		if err := q.SetStatus(context.Background(), jobID, queue.StatusCompleted); err != nil {
 			log.Printf("set status completed: %v", err)
 		}
+		if err := q.Ack(context.Background(), jobID); err != nil {
+			log.Printf("ack: %v", err)
+		}
 		fmt.Printf("done %s\n", jobID)
 
 	}
