@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"time"
+
+	"github.com/redis/go-redis/v9"
 )
 
 const (
@@ -12,6 +14,8 @@ const (
 	StatusCompleted  = "COMPLETED"
 	StatusFailed     = "FAILED"
 )
+const delayedKey = "queue:delayed"
+const StatusScheduled = "SCHEDULED"
 
 var ErrJobNotFound = errors.New("job not found")
 
@@ -102,4 +106,41 @@ func (q *QueueClient) RecoverStale(ctx context.Context, maxAge time.Duration) (i
 	}
 	return recovered, nil
 
+}
+func (q *QueueClient) EnqueueDelayed(ctx context.Context, id, payload string, delay time.Duration) error {
+	runAt := time.Now().Add(delay).UnixMilli()
+	pipe := q.redisClient.TxPipeline()
+	pipe.HSet(ctx, jobKey(id), map[string]any{
+		"id":         id,
+		"status":     StatusScheduled,
+		"payload":    payload,
+		"retries":    0,
+		"created_at": now(),
+		"updated_at": now(),
+	})
+
+	pipe.ZAdd(ctx, delayedKey, redis.Z{
+		Score:  float64(runAt),
+		Member: id,
+	})
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+var moveDueScript = redis.NewScript(`
+local ids = redis.call('ZRANGEBYSCORE', KEYS[1], '-inf', ARGV[1], 'LIMIT', 0, ARGV[2])
+for _, id in ipairs(ids) do
+  redis.call('ZREM', KEYS[1], id)
+  redis.call('LPUSH', KEYS[2], id)
+  redis.call('HSET', ARGV[3] .. id, 'status', 'QUEUED', 'updated_at', ARGV[1])
+end
+return #ids
+`)
+
+// MoveDue moves up to limit due jobs from delayed to pending, atomically.
+func (q *QueueClient) MoveDue(ctx context.Context, limit int) (int, error) {
+	return moveDueScript.Run(ctx, q.redisClient,
+		[]string{delayedKey, pendingKey},
+		now(), limit, "job:",
+	).Int()
 }

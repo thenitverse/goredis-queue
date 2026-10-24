@@ -37,4 +37,16 @@ func main() {
 		log.Fatalf("%d of 10 jobs failed to enqueue", failed)
 	}
 	fmt.Println("All 10 jobs enqueued successfully.  Exiting...")
+	// Enqueue delayed jobs
+	if err := q.EnqueueDelayed(ctx, "job-id-11", `{"n":11}`, 10*time.Second); err != nil {
+		log.Printf("Failed to enqueue delayed job 11: %v", err)
+	} else {
+		fmt.Println("Scheduled job-id-11 (10 seconds delay)")
+	}
+
+	if err := q.EnqueueDelayed(ctx, "job-id-12", `{"n":12}`, 20*time.Second); err != nil {
+		log.Printf("Failed to enqueue delayed job 12: %v", err)
+	} else {
+		fmt.Println("Scheduled job-id-12 (20 seconds delay)")
+	}
 }
