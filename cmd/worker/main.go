@@ -23,7 +23,7 @@ func main() {
 	defer q.Close()
 
 	for ctx.Err() == nil {
-		jobID, ok, err := q.Dequeue(ctx, 5*time.Second)
+		jobID, ok, err := q.Dequeue(ctx, 10*time.Second)
 		if err != nil {
 			if ctx.Err() != nil {
 				break
@@ -40,7 +40,7 @@ func main() {
 			log.Printf("set status processing: %v", err)
 		}
 
-		time.Sleep(2 * time.Second) // real work goes here
+		time.Sleep(30 * time.Second) // real work goes here
 
 		if err := q.SetStatus(context.Background(), jobID, queue.StatusCompleted); err != nil {
 			log.Printf("set status completed: %v", err)
