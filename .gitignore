@@ -1,0 +1,11 @@
+
+# Local compiled binaries
+/producer
+/worker
+/reaper
+/scheduler
+/producer-bin
+/worker-bin
+/reaper-bin
+/scheduler-bin
+/delayed-producer-bin
