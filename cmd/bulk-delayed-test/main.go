@@ -24,7 +24,7 @@ func main() {
 			15*time.Second,
 		)
 		if err != nil {
-			log.Fatalf("Failed to scheule %s; %v", id, err)
+			log.Fatalf("Failed to schedule %s; %v", id, err)
 		}
 	}
 	fmt.Println("Successfully scheduled 50 delayed jobs....")
